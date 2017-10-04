@@ -1,0 +1,2 @@
+# Data-Visualization-for-Public-Policy
+This course introduces students to the tools, skills, and concepts necessary for making compelling data visualizations for political analysis and public policy research. Students will learn about the theory of graphical design, including the grammar of graphics, and the science of visual perception such as to inform making visualizations that are intuitive, effective, and memorable.
