@@ -34,3 +34,11 @@ colnames(acc2015)
 colnames(acc2015) %in% colnames(acc2014)
 #missing data from acc2014: "RUR_URB",FUNC_SYS","RD_OWNER"
 
+#merging files
+acc <- bind_rows(acc2014, acc2015)
+count(acc, RUR_URB)
+#Since RUR_URB was missing from acc2014, when we merged the two datasets, 
+#they were blank for acc2014. Hence NA in the merged set
+
+
+
