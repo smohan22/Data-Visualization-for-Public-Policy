@@ -40,5 +40,16 @@ count(acc, RUR_URB)
 #Since RUR_URB was missing from acc2014, when we merged the two datasets, 
 #they were blank for acc2014. Hence NA in the merged set
 
+#Merging on another data source
+fips <- read_csv('fips.csv')
+glimpse(fips)
 
-
+#Change variable details
+acc$STATE <- as.character(acc$STATE)
+acc$COUNTY <- as.character(acc$COUNTY)
+acc$STATE <- str_pad(acc$STATE, width = 2, side = "left", pad = "0")
+acc$COUNTY <- str_pad(acc$COUNTY, width = 3, side = "left", pad = "0")
+acc <- rename(acc, StateFIPSCode = STATE)
+acc <- rename(acc, CountyFIPSCode = COUNTY)
+# merge using join to not lose data
+acc_full <- acc %>% left_join(fips, by = c("StateFIPSCode","CountyFIPSCode"))
