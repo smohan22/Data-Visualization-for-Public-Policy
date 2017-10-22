@@ -1,0 +1,373 @@
+---
+title: 'Comparing Business Regulation for Domestic Firms in 190 Economies: Equal Opportunity
+  for All?'
+author: "Shambhavi Mohan"
+date: 'Due: October 15, 2017'
+output:
+  html_document: default
+  pdf_document: default
+urlcolor: green
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Background
+The opportunity to find a job or ease of doing business can help people come out of poverty or prevent them from going in. I want to explore how the ease of doing business has improved across economies and how different lower income economies are as compared to high income ones.
+
+*Important Definition:* An economy’s distance to frontier is reflected on a scale from 0 to 100, where 0 represents the lowest performance and 100 represents the frontier. For example, a score of 75 in DB 2016 means an economy was 25 percentage points away from the frontier constructed from the best performances across all economies and across time.
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+setwd("~/Documents/dataviz project")
+
+#import libraries
+library(readr)
+library(haven)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(tidyr)
+library(reshape2)
+library(rworldmap)
+library(RColorBrewer)
+library(extrafont)
+library(directlabels)
+
+
+doingbiz <- read.csv("doingbusiness.csv")
+
+#Changing names for Economy
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Russian Federation", "Russia" )
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Antigua and Barbuda",  "Antigua")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Brunei Darussalam", "Brunei")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Cabo Verde", "Cape Verde")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Congo, Dem Rep" , "Democratic Republic of the Congo")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Congo, Rep", "Republic of Congo")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Cote d’Ivoire", "Ivory Coast")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Egypt, Arab Rep", "Egypt")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Gambia, The", "Gambia")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Iran, Islamic Rep", 'Iran')
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Korea, Rep", "South Korea")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Kyrgyz Republic", "Kyrgyzstan")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Lao PDR", "Laos")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Macedonia, FYR", "Macedonia")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Micronesia, Fed Sts", "Micronesia")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Puerto Rico US", "Puerto Rico")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "São Tomé and Príncipe", "Sao Tome and Principe")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Slovak Republic", "Slovakia")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "St Kitts and Nevis", "Saint Kitts")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "St Lucia", "Saint Lucia")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "St Vincent and the Grenadines", "Saint Vincent")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Syrian Arab Republic", "Syria")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Taiwan, China", "Taiwan")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Trinidad and Tobago", "Trinidad" )
+doingbiz$Economy <- str_replace(doingbiz$Economy, "United Kingdom", "UK")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "United States", "USA")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Venezuela, RB", "Venezuela")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "West Bank and Gaza", "Palestine")
+doingbiz$Economy <- str_replace(doingbiz$Economy, "Yemen, Rep", "Yemen")
+
+doingbiz$Year <- gsub("DB*", "", doingbiz$Year) 
+doingbiz$Year <- as.numeric(doingbiz$Year)
+doingbiz <- doingbiz %>% filter(!str_detect(Economy, "-"))
+
+#for the world map
+map.world <- map_data(map="world")
+map.world$region <- str_replace(map.world$region, "Tobago", "Trinidad")
+map.world$region <- str_replace(map.world$region, "Virgin Island", "USA")
+
+names(doingbiz)[names(doingbiz) == "region"] <- 'area' #toavoid conflict later
+
+#Only distance to frontier data
+frontier <- doingbiz %>% group_by(area,incomegroup, Year) %>% 
+  summarise(StartingBusiness = mean(Starting.a.Business...DTF, rm.na = TRUE), 
+  GettingConstructionPermits = mean(Dealing.with.Construction.Permits...DTF, rm.na = TRUE), 
+  GettingElectricity = mean(Getting.Electricity...DTF, rm.na = TRUE), 
+  RegisteringProperty = mean(Registering.Property...DTF, rm.na = TRUE), 
+  GettingCredit = mean(Getting.Credit...DTF, rm.na = TRUE), 
+  ProtectingInvestor = mean(Protecting.Minority.Investors...DTF, rm.na = TRUE), 
+  PayingTaxes = mean(Paying.Taxes...DTF, rm.na = TRUE), 
+  Trading = mean(Trading.across.Borders...DTF, rm.na = TRUE), 
+  EnforcingContracts = mean(Enforcing.Contracts...DTF, rm.na = TRUE)) 
+
+#frontier$Year <- gsub("DB*", "", frontier$Year) 
+
+#frontier$Year <- as.Date(frontier$Year, "%Y")
+
+## Theme
+#install.packages("extrafont");
+#library(extrafont)
+#font_import(pattern = "Cambria")
+#loadfonts(quiet = T)
+theme_sm <- function () { 
+  theme_grey(base_size=9, base_family="Avenir") %+replace% 
+    theme(
+      plot.background = element_blank(),
+      panel.background  = element_rect(fill="gray96", colour=NA), 
+      #plot.background = element_rect(fill = "lightskyblue1",colour = "pink",size = 0.5, linetype = "longdash"),
+      panel.border = element_rect(fill = NA, colour = "gray60", size = 0.5), 
+      panel.grid.major = element_line(colour = "grey90", size = 0.2), 
+      panel.grid.minor = element_line(colour = "grey98", size = 0.5), 
+      legend.background = element_rect(fill="transparent", colour=NA),
+      legend.key = element_rect(fill="transparent", colour=NA),
+      legend.position = "right", 
+      plot.title = element_text(size=14, family = "Georgia", face = "bold", hjust = 0),
+      plot.subtitle = element_text(size=10, hjust = 0),
+      axis.title = (element_text(size=10)),
+      plot.caption = (element_text(size = 6, hjust = 1, face = "italic"))
+      #legend.key = element_rect(fill = "lightskyblue1", color = "lightskyblue1"),
+      #legend.background = element_rect( fill = "lightskyblue1",color = "pink", size = 0.5,linetype = "longdash"),
+      )
+}
+
+theme_sm_axis <- function() {
+theme(axis.line.y = element_line(colour = "black", size = 0.5),
+      axis.line.x = element_line(colour = "black", size = 0.5),
+      panel.border = element_blank(),
+      panel.background  = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.grid.minor.y = element_line(colour = "grey80", size = 0.2),
+      panel.grid.major.y = element_line(colour = "grey80", size = 0.2)
+    )
+}
+
+### Color Palatte
+continuous_pal = c("cadetblue", "cadetblue3", "cadetblue2", "cadetblue1", "darkslategray1", "aquamarine", 'aquamarine1', 'aquamarine2', 'aquamarine3')
+discrete_pal = c('cornflowerblue','aquamarine3','deeppink3', "darkolivegreen3", "darkgoldenrod3", 'antiquewhite3', "chartreuse2", "darkslategray2", "blue")
+qualitative_pal = 'Set2'
+```
+
+**Graph 1**
+Unsurprisingly, the frontier scores are lowesst for low income countries. We can see that there is a drop across frontier scores for all 4 - High Income, Upper Middle Income, Lower Middle Income and Low Income countries. We can observe that this is mostly due to Getting Electrity.
+I would like to explore that further - where is the maximum drop across countries
+
+```{r echo= FALSE, warning = FALSE, message=FALSE }
+ggplot(data = melt(frontier, id.var = c("Year", "area", "incomegroup"), variable.name = "Regulatory_Process", value.name = "Score"),
+       aes(x = Year, y = Score, fill = factor(incomegroup, levels = c("High income", "Upper middle income", "Lower middle income",  "Low income")))) + 
+         geom_bar(stat = "identity") +
+  scale_fill_manual(values = discrete_pal)+
+  facet_wrap(~Regulatory_Process, ncol = 3) +
+  guides(fill=guide_legend(title = "Income Groups")) +
+  scale_y_continuous() +
+  theme_light() +
+  theme_sm() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Distance to Frontier across Years \n",
+       subtitle = "Average year on year improvement in distance to frontier scores \n",
+       x = "Year", y = "Aggregate Frontier Scores",
+       caption = 'Data from WorldBank:doingbusiness')
+```
+
+\newpage
+
+**Graph 2 **
+As we can see, the worst performing countries belong to the developing world. Amongst them I would like to see which ones have improved the most.
+
+```{r echo= FALSE, warning = FALSE, message=FALSE }
+#data is merged dataset of our data:doingbiz and worldmap data
+ggplot() + 
+  geom_polygon(data=merge(x = map.world, y = filter(doingbiz, Year == 2016), by.x = 'region', by.y = "Economy"), aes(x=long, y=lat, group = group, fill=Ease.of.Doing.Business.Rank)) + 
+  geom_jitter()+ 
+  scale_fill_continuous(low = "green", high = "red", guide="colorbar", guide_legend("Country Rankings") ) + 
+  scale_x_continuous() + scale_y_continuous() + 
+  labs(x = "Longitude", y = "Latitude", title = "Ease of Doing Business \n", 
+       subtitle = "Worst Ranked countries are african, south america and south asia. \n",
+       caption = 'Data from WorldBank:doingbusiness')
+```
+
+\newpage
+
+**Graph 3**
+It is very interesting to observe all 190 countries in the same graph. We can see that almost all high income countries (red in graph) have been stable in terms of overall distance to the frontier, ie not much change in terms of regulations towards ease of business. A surprising exception to this is Singapore.
+It is surprising to see that many of the upper middle income countries (purple in graph) have improved in their performace towards ease of business,
+The low income countries have had more fluctuations in terms of performancem, with few notable imrovements being - India, Kenya, Rwanda and Uganda. These are few of the countries I will explore in the next few graphs.
+
+```{r echo= FALSE, warning = FALSE, message=FALSE }
+#High Income Group
+ggplot(data = filter(doingbiz, incomegroup == "High income"), aes(x = Year, y = Overall.DTF, color = incomegroup)) + 
+  geom_line(stat = "identity") + facet_wrap(~Economy, ncol = 10) + 
+  scale_y_continuous() + scale_x_continuous() + 
+  scale_color_manual(values = "deeppink3") +
+  guides(color = F) +
+  theme_sm() + theme( strip.background = element_blank(), axis.text.x = element_blank()) +
+  labs(x = "Overall DTF", y = "Years", title = "Change in High Income countries perfomances 2004-17")
+#Upper Middle Income Group
+ggplot(data = filter(doingbiz, incomegroup == "Upper middle income"), aes(x = Year, y = Overall.DTF, color = incomegroup)) + 
+  geom_line(stat = "identity") + facet_wrap(~Economy, ncol = 10) + 
+  scale_color_manual(values = "blue") +
+  scale_y_continuous() + scale_x_continuous() + 
+  guides(color = F) +
+  theme_sm() + theme( strip.background = element_blank(), axis.text.x = element_blank()) +
+  labs(x = "Overall DTF", y = "Years", title = "Change in Upper middle Income countries perfomances 2004-17")
+# Lower Middle income Group
+ggplot(data = filter(doingbiz, incomegroup == "Lower middle income"), aes(x = Year, y = Overall.DTF, color = incomegroup)) + 
+  geom_line(stat = "identity") + facet_wrap(~Economy, ncol = 10) + 
+  scale_color_manual(values = "orange") +
+  scale_y_continuous() + scale_x_continuous() + 
+  guides(color = F) +
+  theme_sm() + theme( strip.background = element_blank(), axis.text.x = element_blank()) +
+  labs(x = "Overall DTF", y = "Years", title = "Change in Lower middle Income countries perfomances 2004-17")
+#Low Income Group
+ggplot(data = filter(doingbiz, incomegroup == "Low income"), aes(x = Year, y = Overall.DTF, color = incomegroup)) + 
+  geom_line(stat = "identity") + facet_wrap(~Economy, ncol = 10) + 
+  scale_color_manual(values = "red") +
+  scale_y_continuous() + scale_x_continuous() + 
+  guides(color = F) +
+  theme_sm() + theme( strip.background = element_blank(), axis.text.x = element_blank()) +
+  labs(x = "Overall DTF", y = "Years", title = "Change in Low Income countries perfomances 2004-17"
+       , caption = 'Data from WorldBank:doingbusiness')
+```
+
+\newpage
+
+**Graph 4**
+
+On further inspection of Singapore, we can see that, there has a steep drop in the performance of Singapore, especially in getting credit. we will use *getting credit* to further explore other countries too.
+
+
+```{r echo= FALSE, warning = FALSE, message=FALSE }
+data <- doingbiz %>% filter(Economy == "Singapore") %>% group_by(Year) %>% 
+  summarise(StartingBusiness = mean(Starting.a.Business...DTF, rm.na = TRUE), 
+            GettingConstructionPermits = mean(Dealing.with.Construction.Permits...DTF, rm.na = TRUE), 
+            GettingElectricity = mean(Getting.Electricity...DTF, rm.na = TRUE), 
+            RegisteringProperty = mean(Registering.Property...DTF, rm.na = TRUE), 
+            GettingCredit = mean(Getting.Credit...DTF, rm.na = TRUE), 
+            ProtectingInvestor = mean(Protecting.Minority.Investors...DTF, rm.na = TRUE), 
+            PayingTaxes = mean(Paying.Taxes...DTF, rm.na = TRUE), 
+            Trading = mean(Trading.across.Borders...DTF, rm.na = TRUE), 
+            EnforcingContracts = mean(Enforcing.Contracts...DTF, rm.na = TRUE)) %>%
+  melt(id.vars = "Year", variable.name = "Regulatory_Process", value.name = "Score")
+
+ggplot() + 
+  geom_line(data = filter(data, (Regulatory_Process != "Trading" & Regulatory_Process != "GettingCredit" & Regulatory_Process != "ProtectingInvestor")), aes(x = Year, y = Score, group = Regulatory_Process), color = 'gray86') + 
+  geom_line(data = filter(data, (Regulatory_Process == "Trading" | Regulatory_Process == "GettingCredit" | Regulatory_Process == "ProtectingInvestor")), aes(x = Year, y = Score, color = Regulatory_Process)) + 
+  scale_color_manual(values = discrete_pal) + 
+  theme_sm() +
+  labs(x = "Year of Reference", y = "Scores Across different Regulatory Measures", title = "Performace drop by Singapore 2004-17 \n", 
+       subtitle = "There has been a steep drop in Sgp's performance in the financial aspects. However, it is still ranked 7 overall \n", 
+       caption = 'Data from WorldBank:doingbusiness')
+rm(data)
+```
+\newpage
+
+**Graph 5**
+
+From this graph we can see that though the performace of Uganda and Rwanda has improved, whereas Singapore and India has worsened. Surprisingly,  Rwanda's final performance is better than that of Sgp (current rank 7). 
+I would like to explore this trend of increase in *ease of getting credit* in the two sub saharan countries to the other sub saharan countries
+
+```{r echo= FALSE, warning = FALSE, message=FALSE }
+data <- doingbiz %>% filter(Economy == "Singapore" | Economy == "India" | Economy == "Rwanda" | Economy == "Uganda") %>% 
+  filter(Year == 2014 | Year == 2017) %>%
+  group_by(Year, Economy) %>% 
+  summarise(StartingBusiness = mean(Starting.a.Business...DTF, rm.na = TRUE), 
+            GettingConstructionPermits = mean(Dealing.with.Construction.Permits...DTF, rm.na = TRUE), 
+            GettingElectricity = mean(Getting.Electricity...DTF, rm.na = TRUE), 
+            RegisteringProperty = mean(Registering.Property...DTF, rm.na = TRUE), 
+            GettingCredit = mean(Getting.Credit...DTF, rm.na = TRUE), 
+            ProtectingInvestor = mean(Protecting.Minority.Investors...DTF, rm.na = TRUE), 
+            PayingTaxes = mean(Paying.Taxes...DTF, rm.na = TRUE), 
+            Trading = mean(Trading.across.Borders...DTF, rm.na = TRUE), 
+            EnforcingContracts = mean(Enforcing.Contracts...DTF, rm.na = TRUE)) 
+data$Year <- as.character(data$Year)
+h <- mean(doingbiz$Getting.Credit...DTF, na.rm = TRUE) %>% round(digit = 1)
+ggplot(data,aes(x = Economy, y = GettingCredit, fill = Year)) + 
+  scale_fill_manual(values = discrete_pal)+
+  geom_bar(stat = "identity",position = "dodge" ) + 
+  geom_hline(aes(yintercept = h)) +
+  annotate(geom="text", label= h, x=0, y=h, vjust=-1) +
+  theme_sm() + theme_sm_axis() +
+  labs(x = "Countries of Interest", y = "Ease of getting credit in the country",
+     title = "Comparative performance between 2014 and 2016 \n", 
+     subtitle = "All countries of interest perform better than the average of all countries \n",
+     caption = 'Data from WorldBank:doingbusiness')
+```
+
+\newpage
+
+**Part 2:**
+
+We are now going to focus on one country that performed even better than Singapore - Rwanda. 
+I will be using Enterprise Survey data for this part. Enterprise Survey focuses on many factors that shape a business environment. The Enterprise Survey is conducted by World Bank and its partners across the world on all small, medium and large firms.
+
+**Graph 6: Performance of Rwanada vs other Sub Saharan Countries**
+
+```{r echo= FALSE, warning = FALSE, message=FALSE }
+#Graph 6 (not functional) : Rwanda's Ranking of Obstacles in terms of other Sub Saharan Countries
+entrep_data <- read_csv("obstacle.csv")
+cols.num <- c('Access to finance',	'Access to land',	'Business licensing and permits',	'Corruption',	'Courts',	'Crime, theft and disorder',	'Customs and trade regulations',	'Electricity',	'Inadequately educated workforce',	'Labor regulations', 'Political instability',	'Practices of the informal sector',	'Tax administration',	'Tax rates', 'Transportation')
+entrep_data[cols.num] <- sapply(entrep_data[cols.num],as.numeric)
+#filtering data to contain only current data
+rwanda <- filter(entrep_data, (Economy == "Rwanda" | Economy == "Sub-Saharan Africa") & (Year == 2011 | is.na(Year)) & is.na(Subgroup)) %>%
+  select(-(Year:`Average/SE/N`), -`Business licensing and permits`, -Courts, - `Crime, theft and disorder`, - `Inadequately educated workforce`, -`Labor regulations`) %>%
+  melt(id.var = c("Economy"), variable.name = "Obstacle", value.name = "Percentage")
+
+levels(rwanda$Obstacle) <- gsub(" ", "\n", levels(rwanda$Obstacle))
+ggplot() + 
+  geom_bar(data = filter(rwanda, Economy == "Rwanda"), aes(x = Obstacle, y = Percentage), stat = "Identity", fill = "cornflowerblue") +
+  geom_point(data = filter(rwanda, Economy == "Sub-Saharan Africa"), aes(x = Obstacle, y = Percentage), color = "orange") +
+  geom_line(data = filter(rwanda, Economy == "Sub-Saharan Africa"), aes(x = Obstacle, y = Percentage, group = Economy), color = "deeppink3") +
+  geom_dl(data = filter(rwanda, Economy == "Sub-Saharan Africa"), aes(x = Obstacle, y = Percentage, label = Economy), method = list(dl.trans(x = x  -2), "last.points", cex = 0.8), color = "deeppink3") +
+  theme_sm() + theme_sm_axis() +
+  labs(x = "Obstacles faced by firms", y = "Percent of Firms", title = "Rwanda's percentage of firms that identify the problem \n as the biggest obstacle, 2011 \n",
+         subtitle = "Top obstacles identified by Rwanda's firms benchmarked against the regional average (sub saharan africa)", 
+         caption = 'Data from http://www.enterprisesurveys.org')
+```
+
+\newpage
+
+**Graph 7**
+
+```{r echo= FALSE, warning = FALSE, message=FALSE }
+#Graph 7 : Rwanda's Improvement
+entrep_data <- read_csv("obstacle.csv")
+rwanda <- filter(entrep_data, Economy == "Rwanda" & `Subgroup Level` == "All")
+cols.num <- c('Access to finance',	'Access to land',	'Business licensing and permits',	'Corruption',	'Courts',	'Crime, theft and disorder',	'Customs and trade regulations',	'Electricity',	'Inadequately educated workforce',	'Labor regulations', 'Political instability',	'Practices of the informal sector',	'Tax administration',	'Tax rates', 'Transportation')
+rwanda[cols.num] <- sapply(rwanda[cols.num],as.numeric)
+rwanda <- mutate(rwanda, Other = `Business licensing and permits` +	`Corruption` + `Courts` +	`Crime, theft and disorder` + `Customs and trade regulations` + `Labor regulations` + `Inadequately educated workforce`,
+                 Tax  = `Tax administration` + `Tax rates`) %>%
+  select(-Subgroup, -`Subgroup Level`, -`Average/SE/N`, -Economy, -(`Business licensing and permits`: `Customs and trade regulations`), -`Labor regulations`, -`Tax rates`, - `Tax administration`, -`Inadequately educated workforce`) %>%
+  melt(id.var = c("Year", "Top Subgroup Level"), variable.name = "Obstacle", value.name = "Percentage")
+
+ggplot(data=filter(rwanda) , aes(x = "", y = Percentage, fill = Obstacle)) +
+  facet_grid(Year ~`Top Subgroup Level`) +
+  geom_col(width = 1) +
+  scale_fill_brewer(name = "Percent of firms that believe following \n to be the biggest obstacle", palette = qualitative_pal)+
+  coord_polar("y") +
+  theme_sm() +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
+  labs(x = "", y = "", title = "Rwanda's Profile in terms of Business Environment \n Obstacles (2006 vs 2011) \n",
+subtitle = "In 2006 20 firms were surveyed in Butare (9 in 2011) and 192 in Kigali (232 in 2011). Inacessibility 
+to electricity has stopped being an issue. However, an increase in practices of the informal 
+sector seems to be a rising concern. Tax and Regulation is still a big concern.  \n", 
+caption = 'Data from http://www.enterprisesurveys.org')
+
+```
+\newpage
+
+**Graph8**
+
+```{r echo= FALSE, warning = FALSE, message=FALSE }
+female <- read_csv("gender.csv") %>% 
+  filter((Economy == "Rwanda" | Economy == "Sub-Saharan Africa") & (Year == 2011 | is.na(Year)) & is.na(Subgroup)) %>%
+  select(Economy, `Proportion of permanent full-time workers that are female (%)`, `Percent of firms with female participation in ownership`)
+ownership <- read_csv("firm.csv") %>%
+  filter((Economy == "Rwanda" | Economy == "Sub-Saharan Africa") & (Year == 2011 | is.na(Year)) & is.na(Subgroup)) %>%
+  select(Economy, `Proportion of private domestic ownership in a firm (%)`, `Percent of firms with at least 10% of foreign ownership`, `Percent of firms with at least 10% of government/state ownership`,`Percent of firms with an internationally-recognized quality certification`)
+firms <- merge(female, ownership, by = "Economy") %>%
+  melt(id.var = c('Economy'), variable.name = "Charcteristic", value.name = "Percentage")
+firms$Percentage <- as.numeric(firms$Percentage)
+
+levels(firms$Charcteristic) <- gsub(" ", "\n", levels(firms$Charcteristic))
+ggplot(firms, aes(x = Charcteristic, y = Percentage, fill = Economy)) + 
+       geom_bar(position = 'dodge', stat = 'identity')+
+  scale_fill_manual(values = discrete_pal) +
+  theme_sm() +
+  labs(x = "", y = "Percentage of Firms", title = "Rwanda's Country Profile (2011) \n",
+       subtitle = "It is interesting to observe that % ownership by women is higher than the working full time \n female population. Most of the firms are private run as compared to government participation.\n", 
+       caption = 'Data from http://www.enterprisesurveys.org')
+```
+
