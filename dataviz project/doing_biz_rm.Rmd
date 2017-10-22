@@ -142,7 +142,7 @@ qualitative_pal = 'Set2'
 ```
 
 **Graph 1**
-Unsurprisingly, the frontier scores are lowesst for low income countries. We can see that there is a drop across frontier scores for all 4 - High Income, Upper Middle Income, Lower Middle Income and Low Income countries. We can observe that this is mostly due to Getting Electrity.
+Unsurprisingly, the frontier scores are lowest for low income countries. We can see that there is a drop across frontier scores for all 4 - High Income, Upper Middle Income, Lower Middle Income and Low Income countries. We can observe that this is mostly due to Getting Electrify.
 I would like to explore that further - where is the maximum drop across countries
 
 ```{r echo= FALSE, warning = FALSE, message=FALSE }
@@ -164,7 +164,7 @@ ggplot(data = melt(frontier, id.var = c("Year", "area", "incomegroup"), variable
 \newpage
 
 **Graph 2 **
-As we can see, the worst performing countries belong to the developing world. Amongst them I would like to see which ones have improved the most.
+As we can see, the worst performing countries belong to the developing world. Among them I would like to see which ones have improved the most.
 
 ```{r echo= FALSE, warning = FALSE, message=FALSE }
 #data is merged dataset of our data:doingbiz and worldmap data
@@ -182,8 +182,8 @@ ggplot() +
 
 **Graph 3**
 It is very interesting to observe all 190 countries in the same graph. We can see that almost all high income countries (red in graph) have been stable in terms of overall distance to the frontier, ie not much change in terms of regulations towards ease of business. A surprising exception to this is Singapore.
-It is surprising to see that many of the upper middle income countries (purple in graph) have improved in their performace towards ease of business,
-The low income countries have had more fluctuations in terms of performancem, with few notable imrovements being - India, Kenya, Rwanda and Uganda. These are few of the countries I will explore in the next few graphs.
+It is surprising to see that many of the upper middle income countries (purple in graph) have improved in their performance towards ease of business,
+The low income countries have had more fluctuations in terms of performance, with few notable improvements being - India, Kenya, Rwanda and Uganda. These are few of the countries I will explore in the next few graphs.
 
 ```{r echo= FALSE, warning = FALSE, message=FALSE }
 #High Income Group
@@ -255,8 +255,8 @@ rm(data)
 
 **Graph 5**
 
-From this graph we can see that though the performace of Uganda and Rwanda has improved, whereas Singapore and India has worsened. Surprisingly,  Rwanda's final performance is better than that of Sgp (current rank 7). 
-I would like to explore this trend of increase in *ease of getting credit* in the two sub saharan countries to the other sub saharan countries
+From this graph we can see that though the performance of Uganda and Rwanda has improved, whereas Singapore and India has worsened. Surprisingly,  Rwanda's final performance is better than that of Sgp (current rank 7). 
+I would like to explore this trend of increase in *ease of getting credit* in the two sub Saharan countries to the other sub Saharan countries
 
 ```{r echo= FALSE, warning = FALSE, message=FALSE }
 data <- doingbiz %>% filter(Economy == "Singapore" | Economy == "India" | Economy == "Rwanda" | Economy == "Uganda") %>% 
@@ -293,6 +293,8 @@ We are now going to focus on one country that performed even better than Singapo
 I will be using Enterprise Survey data for this part. Enterprise Survey focuses on many factors that shape a business environment. The Enterprise Survey is conducted by World Bank and its partners across the world on all small, medium and large firms.
 
 **Graph 6: Performance of Rwanada vs other Sub Saharan Countries**
+As we can see in the graph, the electricity condition, corruption and political instability is not one of the major concern of Rwanda's enterprises, unlike the rest of the Saharan countries. However, when in comes to taxes and regulation, Rwanda is lagging behind. I will be exploring it further in future graphs.
+
 
 ```{r echo= FALSE, warning = FALSE, message=FALSE }
 #Graph 6 (not functional) : Rwanda's Ranking of Obstacles in terms of other Sub Saharan Countries
@@ -319,6 +321,7 @@ ggplot() +
 \newpage
 
 **Graph 7**
+We see a remarkable improvement in electricity (reduction in outages and increase in number of firms with generators). Political instability has almost stopped being an issue. However, as ease of doing business has improved in Rwanda, there has been an increase in concern related to the informal business sector. Taxes and regulations continue to remain a major concern for the firms.
 
 ```{r echo= FALSE, warning = FALSE, message=FALSE }
 #Graph 7 : Rwanda's Improvement
@@ -349,6 +352,8 @@ caption = 'Data from http://www.enterprisesurveys.org')
 \newpage
 
 **Graph8**
+An average firm in Rwanda has more number of female employees/owners as compared to the rest of sub Saharn Africa. Is this because of improvement in political stability or reduction in corruption or imporvement in finances and technology. I would like to explore the relationship between these in future. 
+As we can see, most of the firms are privately owned (domestic and foreign). Does this result in more inequity? 
 
 ```{r echo= FALSE, warning = FALSE, message=FALSE }
 female <- read_csv("gender.csv") %>% 
